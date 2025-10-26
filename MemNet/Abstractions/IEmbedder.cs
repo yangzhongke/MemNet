@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace MemNet.Abstractions;
 
 /// <summary>
-/// Embedding generator interface (replicating Mem0 embeddings/base.py)
+/// Embedding generator interface
 /// </summary>
 public interface IEmbedder
 {

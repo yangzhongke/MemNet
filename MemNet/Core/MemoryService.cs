@@ -161,7 +161,7 @@ public class MemoryService : IMemoryService
         memory.UpdatedAt = DateTime.UtcNow;
         memory.Embedding = await _embedder.EmbedAsync(content, ct);
 
-        await _vectorStore.UpdateAsync(new List<MemoryItem> { memory }, ct);
+        await _vectorStore.UpdateAsync([memory], ct);
         return true;
     }
 
