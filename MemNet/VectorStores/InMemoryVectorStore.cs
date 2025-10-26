@@ -16,6 +16,11 @@ public class InMemoryVectorStore : IVectorStore
     private readonly Dictionary<string, MemoryItem> _memories = new();
     private readonly object _lock = new();
 
+    public Task EnsureCollectionExistsAsync(int vectorSize, bool allowRecreation = false, CancellationToken ct = default)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task InsertAsync(List<MemoryItem> memories, CancellationToken ct = default)
     {
         lock (_lock)

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MemNet.Abstractions;
 using MemNet.Config;
+using MemNet.Internals;
 using Microsoft.Extensions.Options;
 
 namespace MemNet.Embedders;
@@ -46,7 +47,7 @@ public class OpenAIEmbedder : IEmbedder
         };
 
         var response = await _httpClient.PostAsJsonAsync("embeddings", request, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(ct);
         return result?.Data?[0].Embedding ?? Array.Empty<float>();
@@ -61,7 +62,7 @@ public class OpenAIEmbedder : IEmbedder
         };
 
         var response = await _httpClient.PostAsJsonAsync("embeddings", request, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(ct);
         return result?.Data?.Select(d => d.Embedding).ToList() ?? new List<float[]>();

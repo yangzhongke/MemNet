@@ -11,6 +11,14 @@ namespace MemNet.Abstractions;
 public interface IVectorStore
 {
     /// <summary>
+    /// Ensure collection exists with the specified vector size
+    /// </summary>
+    /// <param name="vectorSize">Vector dimension size</param>
+    /// <param name="allowRecreation">Allow recreation if collection exists with different configuration (default: true)</param>
+    /// <param name="ct">Cancellation token</param>
+    Task EnsureCollectionExistsAsync(int vectorSize, bool allowRecreation = false, CancellationToken ct = default);
+    
+    /// <summary>
     /// Insert memories
     /// </summary>
     Task InsertAsync(List<MemoryItem> memories, CancellationToken ct = default);

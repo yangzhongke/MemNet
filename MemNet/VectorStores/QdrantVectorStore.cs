@@ -41,6 +41,55 @@ public class QdrantVectorStore : IVectorStore
         }
     }
 
+    public async Task EnsureCollectionExistsAsync(int vectorSize, bool allowRecreation = false, CancellationToken ct = default)
+    {
+        // Check if collection exists
+        var response = await _httpClient.GetAsync($"/collections/{_collectionName}", ct);
+            
+        if (response.IsSuccessStatusCode)
+        {
+            // Collection exists, check if vector size matches
+            var result = await response.Content.ReadFromJsonAsync<QdrantCollectionInfo>(ct);
+            var existingSize = result?.Result?.Config?.Params?.Vectors?.Size ?? 0;
+                
+            if (existingSize != vectorSize)
+            {
+                if (allowRecreation)
+                {
+                    // Delete and recreate with correct size
+                    await _httpClient.DeleteAsync($"/collections/{_collectionName}", ct);
+                    await CreateCollectionAsync(vectorSize, ct);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Collection '{_collectionName}' exists with vector size {existingSize}, but {vectorSize} was requested. " +
+                        "Set allowRecreation=true to automatically recreate the collection.");
+                }
+            }
+            // Collection exists with correct size, do nothing
+            return;
+        }
+
+        // Collection doesn't exist, create it
+        await CreateCollectionAsync(vectorSize, ct);
+    }
+
+    private async Task CreateCollectionAsync(int vectorSize, CancellationToken ct)
+    {
+        var createRequest = new
+        {
+            vectors = new
+            {
+                size = vectorSize,
+                distance = "Cosine"
+            }
+        };
+
+        var response = await _httpClient.PutAsJsonAsync($"/collections/{_collectionName}", createRequest, ct);
+        await response.EnsureSuccessWithContentAsync();
+    }
+
     public async Task InsertAsync(List<MemoryItem> memories, CancellationToken ct = default)
     {
         var points = memories.Select(m => new
@@ -67,7 +116,7 @@ public class QdrantVectorStore : IVectorStore
             request,
             ct);
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     public async Task UpdateAsync(List<MemoryItem> memories, CancellationToken ct = default)
@@ -150,7 +199,7 @@ public class QdrantVectorStore : IVectorStore
             scrollRequest,
             ct);
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<QdrantScrollResponse>(ct);
 
@@ -214,7 +263,7 @@ public class QdrantVectorStore : IVectorStore
             request,
             ct);
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     public async Task DeleteByUserAsync(string userId, CancellationToken ct = default)
@@ -239,7 +288,7 @@ public class QdrantVectorStore : IVectorStore
             deleteRequest,
             ct);
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     // Internal classes for JSON deserialization
@@ -316,5 +365,35 @@ public class QdrantVectorStore : IVectorStore
 
         [JsonPropertyName("hash")]
         public string? Hash { get; set; }
+    }
+
+    private class QdrantCollectionInfo
+    {
+        [JsonPropertyName("result")]
+        public QdrantCollectionResult? Result { get; set; }
+    }
+
+    private class QdrantCollectionResult
+    {
+        [JsonPropertyName("config")]
+        public QdrantCollectionConfig Config { get; set; } = new();
+    }
+
+    private class QdrantCollectionConfig
+    {
+        [JsonPropertyName("params")]
+        public QdrantCollectionParams Params { get; set; } = new();
+    }
+
+    private class QdrantCollectionParams
+    {
+        [JsonPropertyName("vectors")]
+        public QdrantVectorParams Vectors { get; set; } = new();
+    }
+
+    private class QdrantVectorParams
+    {
+        [JsonPropertyName("size")]
+        public int Size { get; set; }
     }
 }

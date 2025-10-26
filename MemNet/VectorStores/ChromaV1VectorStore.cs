@@ -17,107 +17,38 @@ namespace MemNet.VectorStores;
 /// <summary>
 /// Chroma vector store implementation
 /// </summary>
-public class ChromaV2VectorStore : IVectorStore
+public class ChromaV1VectorStore : IVectorStore
 {
     private readonly HttpClient _httpClient;
-    private readonly string _baseUrl;
-    private readonly string _tenant;
-    private readonly string _database;
-    private readonly string _collectionId;
+    private readonly string _collectionName;
 
-    public ChromaV2VectorStore(HttpClient httpClient, IOptions<ChromaVectorStoreConfig> config)
+    public ChromaV1VectorStore(HttpClient httpClient, IOptions<MemoryConfig> config)
     {
         _httpClient = httpClient;
-        var configValue = config.Value;
-        _tenant = configValue.Tenant;
-        _database = configValue.Database;
-        _collectionId = configValue.CollectionId;
-        _baseUrl = $"/api/v2/tenants/{_tenant}/databases/{_database}/collections/{_collectionId}";
-        
+        var configVectorStore = config.Value.VectorStore;
+        _collectionName = configVectorStore.CollectionName;
+
         // Configure HttpClient
         if (_httpClient.BaseAddress == null)
         {
-            _httpClient.BaseAddress = new Uri(configValue.Endpoint);
+            _httpClient.BaseAddress = new Uri(configVectorStore.Endpoint);
         }
 
-        if (!string.IsNullOrEmpty(configValue.ApiKey))
+        if (!string.IsNullOrEmpty(configVectorStore.ApiKey))
         {
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {configValue.ApiKey}");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {configVectorStore.ApiKey}");
         }
     }
 
     public async Task EnsureCollectionExistsAsync(int vectorSize, bool allowRecreation = false, CancellationToken ct = default)
     {
-        // Step 1: Ensure Tenant exists
-        await EnsureTenantExistsAsync(ct);
+        // Try to get collection
+        var response = await _httpClient.GetAsync($"/api/v1/collections/{_collectionName}", ct);
             
-        // Step 2: Ensure Database exists
-        await EnsureDatabaseExistsAsync(ct);
-            
-        // Step 3: Ensure Collection exists
-        await EnsureCollectionExistsInternalAsync(ct);
-    }
-
-    private async Task EnsureTenantExistsAsync(CancellationToken ct)
-    {
-        // Check if tenant exists
-        var response = await _httpClient.GetAsync($"/api/v2/tenants/{_tenant}", ct);
-        
         if (response.IsSuccessStatusCode)
         {
-            return;
-        }
-
-        // Tenant doesn't exist, create it
-        await CreateTenantAsync(ct);
-    }
-
-    private async Task CreateTenantAsync(CancellationToken ct)
-    {
-        var createRequest = new
-        {
-            name = _tenant
-        };
-
-        var response = await _httpClient.PostAsJsonAsync("/api/v2/tenants", createRequest, ct);
-        await response.EnsureSuccessWithContentAsync();
-    }
-
-    private async Task EnsureDatabaseExistsAsync(CancellationToken ct)
-    {
-        // Check if database exists
-        var response = await _httpClient.GetAsync($"/api/v2/tenants/{_tenant}/databases/{_database}", ct);
-        
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
-
-        // Database doesn't exist, create it
-        await CreateDatabaseAsync(ct);
-    }
-
-    private async Task CreateDatabaseAsync(CancellationToken ct)
-    {
-        var createRequest = new
-        {
-            name = _database
-        };
-
-        var response = await _httpClient.PostAsJsonAsync($"/api/v2/tenants/{_tenant}/databases", createRequest, ct);
-        await response.EnsureSuccessWithContentAsync();
-    }
-
-    private async Task EnsureCollectionExistsInternalAsync(CancellationToken ct)
-    {
-        // Check if collection exists
-        var response = await _httpClient.GetAsync(
-            $"/api/v2/tenants/{_tenant}/databases/{_database}/collections/{_collectionId}", ct);
-        
-        if (response.IsSuccessStatusCode)
-        {
-            // Collection exists
-            // Note: Chroma doesn't require pre-defined vector size, it adapts automatically
+            // Collection exists: Chroma doesn't require pre-defined vector size, it adapts automatically;
+            //therefore, we don't need to recreate it even if vector size differs.
             return;
         }
 
@@ -129,14 +60,11 @@ public class ChromaV2VectorStore : IVectorStore
     {
         var createRequest = new
         {
-            name = _collectionId,
+            name = _collectionName,
             metadata = new { description = "MemNet memory collection" }
         };
 
-        var response = await _httpClient.PostAsJsonAsync(
-            $"/api/v2/tenants/{_tenant}/databases/{_database}/collections", 
-            createRequest, 
-            ct);
+        var response = await _httpClient.PostAsJsonAsync("/api/v1/collections", createRequest, ct);
         await response.EnsureSuccessWithContentAsync();
     }
 
@@ -160,7 +88,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/add",
+            $"/api/v1/collections/{_collectionName}/add",
             request,
             ct);
 
@@ -187,7 +115,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/update",
+            $"/api/v1/collections/{_collectionName}/update",
             request,
             ct);
 
@@ -208,7 +136,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/query",
+            $"/api/v1/collections/{_collectionName}/query",
             searchRequest,
             ct);
 
@@ -239,8 +167,7 @@ public class ChromaV2VectorStore : IVectorStore
                     AgentId = metadata.TryGetValue("agentId", out var aid) ? aid?.ToString() : null,
                     RunId = metadata.TryGetValue("runId", out var rid) ? rid?.ToString() : null,
                     Metadata = !string.IsNullOrEmpty(metadataStr)
-                        ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(metadataStr) ?? new Dictionary<string, object>()
-                        : new Dictionary<string, object>(),
+                        ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(metadataStr) : new Dictionary<string, object>(),
                     CreatedAt = metadata.TryGetValue("createdAt", out var ca) && ca != null ? DateTime.Parse(ca.ToString()!) : DateTime.UtcNow,
                     UpdatedAt = metadata.TryGetValue("updatedAt", out var ua) && !string.IsNullOrEmpty(ua?.ToString()) ? DateTime.Parse(ua.ToString()!) : null,
                     Hash = metadata.TryGetValue("hash", out var hash) ? hash?.ToString() : null
@@ -265,7 +192,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/get",
+            $"/api/v1/collections/{_collectionName}/get",
             getRequest,
             ct);
 
@@ -313,7 +240,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"/{_baseUrl}/get",
+            $"/api/v1/collections/{_collectionName}/get",
             getRequest,
             ct);
 
@@ -357,7 +284,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/delete",
+            $"/api/v1/collections/{_collectionName}/delete",
             deleteRequest,
             ct);
 
@@ -375,7 +302,7 @@ public class ChromaV2VectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}/delete",
+            $"/api/v1/collections/{_collectionName}/delete",
             deleteRequest,
             ct);
 
@@ -412,11 +339,4 @@ public class ChromaV2VectorStore : IVectorStore
         [JsonPropertyName("embeddings")]
         public List<float[]>? Embeddings { get; set; }
     }
-}
-
-public class ChromaVectorStoreConfig : VectorStoreConfig
-{
-    public string Tenant { get; set; }
-    public string Database { get; set; }
-    public string CollectionId { get; set; }
 }

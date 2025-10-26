@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MemNet.Abstractions;
 using MemNet.Config;
+using MemNet.Internals;
 using MemNet.Models;
 using Microsoft.Extensions.Options;
 
@@ -38,44 +39,61 @@ public class MilvusVectorStore : IVectorStore
         {
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
         }
-
-        // Ensure collection exists
-        EnsureCollectionAsync().GetAwaiter().GetResult();
     }
 
-    private async Task EnsureCollectionAsync()
+    public async Task EnsureCollectionExistsAsync(int vectorSize, bool allowRecreation = false, CancellationToken ct = default)
     {
-        try
+        // Check if collection exists
+        var checkRequest = new
         {
-            // Check if collection exists
-            var checkRequest = new
-            {
-                collection_name = _collectionName
-            };
+            collection_name = _collectionName
+        };
 
-            var checkResponse = await _httpClient.PostAsJsonAsync("/v1/vector/collections/describe", checkRequest);
+        var checkResponse = await _httpClient.PostAsJsonAsync("/v1/vector/collections/describe", checkRequest, ct);
             
-            if (checkResponse.IsSuccessStatusCode)
-            {
-                return;
-            }
-
-            // Create collection
-            var createRequest = new
-            {
-                collection_name = _collectionName,
-                dimension = 1536,
-                metric_type = "COSINE",
-                primary_field = "id",
-                vector_field = "embedding"
-            };
-
-            await _httpClient.PostAsJsonAsync("/v1/vector/collections/create", createRequest);
-        }
-        catch
+        if (checkResponse.IsSuccessStatusCode)
         {
-            // Collection might already exist or Milvus is not available
+            // Collection exists, verify dimension matches
+            var result = await checkResponse.Content.ReadFromJsonAsync<MilvusCollectionInfo>(ct);
+            var existingDimension = result?.Data?.VectorField?.Dimension ?? 0;
+                
+            if (existingDimension != vectorSize)
+            {
+                if (allowRecreation)
+                {
+                    // Delete and recreate with correct dimension
+                    var deleteRequest = new { collection_name = _collectionName };
+                    await _httpClient.PostAsJsonAsync("/v1/vector/collections/drop", deleteRequest, ct);
+                    await CreateCollectionAsync(vectorSize, ct);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Collection '{_collectionName}' exists with dimension {existingDimension}, but {vectorSize} was requested. " +
+                        "Set allowRecreation=true to automatically recreate the collection.");
+                }
+            }
+            // Collection exists with correct dimension, do nothing
+            return;
         }
+
+        // Collection doesn't exist, create it
+        await CreateCollectionAsync(vectorSize, ct);
+    }
+
+    private async Task CreateCollectionAsync(int vectorSize, CancellationToken ct)
+    {
+        var createRequest = new
+        {
+            collection_name = _collectionName,
+            dimension = vectorSize,
+            metric_type = "COSINE",
+            primary_field = "id",
+            vector_field = "embedding"
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("/v1/vector/collections/create", createRequest, ct);
+        await response.EnsureSuccessWithContentAsync();
     }
 
     public async Task InsertAsync(List<MemoryItem> memories, CancellationToken ct = default)
@@ -101,7 +119,7 @@ public class MilvusVectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync("/v1/vector/insert", request, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     public async Task UpdateAsync(List<MemoryItem> memories, CancellationToken ct = default)
@@ -126,7 +144,7 @@ public class MilvusVectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync("/v1/vector/search", searchRequest, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<MilvusSearchResponse>(ct);
 
@@ -168,7 +186,7 @@ public class MilvusVectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync("/v1/vector/query", queryRequest, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<MilvusQueryResponse>(ct);
 
@@ -245,7 +263,7 @@ public class MilvusVectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync("/v1/vector/delete", deleteRequest, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     private async Task DeleteMultipleAsync(List<string> ids, CancellationToken ct = default)
@@ -257,7 +275,7 @@ public class MilvusVectorStore : IVectorStore
         };
 
         var response = await _httpClient.PostAsJsonAsync("/v1/vector/delete", deleteRequest, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessWithContentAsync();
     }
 
     // Internal classes for JSON deserialization
@@ -343,5 +361,26 @@ public class MilvusVectorStore : IVectorStore
 
         [JsonPropertyName("hash")]
         public string? Hash { get; set; }
+    }
+
+    private class MilvusCollectionInfo
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+
+        [JsonPropertyName("data")]
+        public CollectionData? Data { get; set; }
+    }
+
+    private class CollectionData
+    {
+        [JsonPropertyName("vectorField")]
+        public VectorFieldInfo? VectorField { get; set; }
+    }
+
+    private class VectorFieldInfo
+    {
+        [JsonPropertyName("dimension")]
+        public int Dimension { get; set; }
     }
 }

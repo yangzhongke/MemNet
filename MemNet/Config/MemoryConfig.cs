@@ -29,7 +29,6 @@ public class VectorStoreConfig
 {
     public string Endpoint { get; set; }
     public string CollectionName { get; set; } = "memnet_collection";
-    public string CollectionId { get; set; }
     public string? ApiKey { get; set; }
 }
 
