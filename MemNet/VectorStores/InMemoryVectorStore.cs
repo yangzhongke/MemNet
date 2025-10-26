@@ -9,7 +9,7 @@ using MemNet.Models;
 namespace MemNet.VectorStores;
 
 /// <summary>
-/// 内存向量存储实现（用于开发和测试）
+/// In-memory vector store implementation (for development and testing)
 /// </summary>
 public class InMemoryVectorStore : IVectorStore
 {
@@ -127,4 +127,3 @@ public class InMemoryVectorStore : IVectorStore
         return (float)(dot / (magA * magB));
     }
 }
-

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 namespace MemNet.Embedders;
 
 /// <summary>
-/// OpenAI 嵌入生成器实现（复刻 Mem0 embeddings/openai.py）
+/// OpenAI embedding generator implementation (replicating Mem0 embeddings/openai.py)
 /// </summary>
 public class OpenAIEmbedder : IEmbedder
 {
@@ -25,7 +25,7 @@ public class OpenAIEmbedder : IEmbedder
         _httpClient = httpClient;
         _config = config.Value.Embedder;
 
-        // 配置 HttpClient
+        // Configure HttpClient
         if (_httpClient.BaseAddress == null)
         {
             _httpClient.BaseAddress = new Uri(_config.Endpoint ?? "https://api.openai.com/v1/");
@@ -67,7 +67,7 @@ public class OpenAIEmbedder : IEmbedder
         return result?.Data?.Select(d => d.Embedding).ToList() ?? new List<float[]>();
     }
 
-    // 内部类用于 JSON 反序列化
+    // Internal classes for JSON deserialization
     private class EmbeddingResponse
     {
         [JsonPropertyName("data")]
@@ -80,4 +80,3 @@ public class OpenAIEmbedder : IEmbedder
         public float[] Embedding { get; set; } = Array.Empty<float>();
     }
 }
-

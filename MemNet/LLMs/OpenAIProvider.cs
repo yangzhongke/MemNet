@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace MemNet.LLMs;
 
 /// <summary>
-///     OpenAI LLM 提供者实现（复刻 Mem0 llms/openai.py）
+///     OpenAI LLM provider implementation (replicating Mem0 llms/openai.py)
 /// </summary>
 public class OpenAIProvider : ILLMProvider
 {
@@ -28,7 +28,7 @@ public class OpenAIProvider : ILLMProvider
         _httpClient = httpClient;
         _config = config.Value.LLM;
 
-        // 配置 HttpClient
+        // Configure HttpClient
         if (_httpClient.BaseAddress == null)
         {
             _httpClient.BaseAddress = new Uri(_config.Endpoint ?? "https://api.openai.com/v1/");
@@ -152,7 +152,7 @@ public class OpenAIProvider : ILLMProvider
         return reranked;
     }
    
-    // 内部类用于 JSON 反序列化
+    // Internal classes for JSON deserialization
     private class ChatCompletionResponse
     {
         [JsonPropertyName("choices")] public List<Choice> Choices { get; set; } = new();

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace MemNet.Models;
 
 /// <summary>
-/// 记忆项实体
+/// Memory item entity
 /// </summary>
 public class MemoryItem
 {
@@ -19,4 +19,3 @@ public class MemoryItem
     public DateTime? UpdatedAt { get; set; }
     public string? Hash { get; set; }
 }
-

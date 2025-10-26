@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace MemNet.Models;
 
 /// <summary>
-/// 添加记忆请求
+/// Add memory request
 /// </summary>
 public class AddMemoryRequest
 {
@@ -15,4 +15,3 @@ public class AddMemoryRequest
     public List<string>? Filters { get; set; }
     public bool? Prompt { get; set; }
 }
-

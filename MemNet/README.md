@@ -1,25 +1,25 @@
 # MemNet - C# Memory Library for LLMs
 
-MemNet 是一个完全复刻 Mem0 的 C# 记忆库，为大语言模型（LLM）提供智能记忆管理功能。
+MemNet is a complete C# replication of Mem0, providing intelligent memory management for Large Language Models (LLM).
 
-## 核心功能
+## Core Features
 
-- **智能记忆提取**：使用 LLM 从对话中自动提取结构化记忆
-- **去重与合并**：自动检测相似记忆并智能合并
-- **向量语义搜索**：基于向量相似度的语义检索
-- **知识图谱存储**：提取实体和关系，构建知识图谱（可选）
-- **多种存储后端**：支持内存存储、Qdrant、Milvus 等
-- **灵活配置**：支持多种 LLM 和 Embedding 提供者
+- **Intelligent Memory Extraction**: Automatically extract structured memories from conversations using LLM
+- **Deduplication and Merging**: Automatically detect similar memories and intelligently merge them
+- **Vector Semantic Search**: Semantic retrieval based on vector similarity
+- **Knowledge Graph Storage**: Extract entities and relationships to build knowledge graphs (optional)
+- **Multiple Storage Backends**: Support for in-memory storage, Qdrant, Milvus, etc.
+- **Flexible Configuration**: Support for multiple LLM and Embedding providers
 
-## 快速开始
+## Quick Start
 
-### 1. 安装
+### 1. Installation
 
 ```bash
 dotnet add reference MemNet
 ```
 
-### 2. 配置（appsettings.json）
+### 2. Configuration (appsettings.json)
 
 ```json
 {
@@ -47,23 +47,23 @@ dotnet add reference MemNet
 }
 ```
 
-### 3. 注册服务
+### 3. Register Services
 
 ```csharp
 using MemNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 从配置文件注册 MemNet
+// Register MemNet from configuration file
 builder.Services.AddMemNet(builder.Configuration);
 
-// 可选：启用知识图谱存储
+// Optional: Enable knowledge graph storage
 builder.Services.WithGraphStore();
 
 var app = builder.Build();
 ```
 
-或者使用代码配置：
+Or use code configuration:
 
 ```csharp
 builder.Services.AddMemNet(config =>
@@ -85,10 +85,10 @@ builder.Services.AddMemNet(config =>
         Provider = "inmemory"
     };
 })
-.WithGraphStore(); // 启用知识图谱存储
+.WithGraphStore(); // Enable knowledge graph storage
 ```
 
-### 4. 使用示例
+### 4. Usage Example
 
 ```csharp
 using MemNet.Abstractions;
@@ -105,7 +105,7 @@ public class ChatService
 
     public async Task ProcessConversation(string userId, string userMessage)
     {
-        // 1. 添加记忆
+        // 1. Add memory
         var addRequest = new AddMemoryRequest
         {
             Messages = new List<MessageContent>
@@ -116,9 +116,9 @@ public class ChatService
         };
 
         var result = await _memoryService.AddAsync(addRequest);
-        Console.WriteLine($"添加了 {result.Results.Count} 条记忆");
+        Console.WriteLine($"Added {result.Results.Count} memories");
 
-        // 2. 搜索相关记忆
+        // 2. Search related memories
         var searchRequest = new SearchMemoryRequest
         {
             Query = userMessage,
@@ -129,152 +129,152 @@ public class ChatService
         var memories = await _memoryService.SearchAsync(searchRequest);
         foreach (var memory in memories)
         {
-            Console.WriteLine($"记忆: {memory.Memory.Data} (相似度: {memory.Score})");
+            Console.WriteLine($"Memory: {memory.Memory.Data} (Similarity: {memory.Score})");
         }
 
-        // 3. 获取所有记忆
+        // 3. Get all memories
         var allMemories = await _memoryService.GetAllAsync(userId);
-        Console.WriteLine($"用户共有 {allMemories.Count} 条记忆");
+        Console.WriteLine($"User has {allMemories.Count} memories");
     }
 }
 ```
 
-## 架构设计
+## Architecture Design
 
-### 核心组件
+### Core Components
 
 ```
 MemNet
-├── Abstractions/          # 核心接口
-│   ├── IMemoryService     # 记忆服务接口
-│   ├── ILLMProvider       # LLM 提供者接口
-│   ├── IEmbedder          # 嵌入生成器接口
-│   └── IVectorStore       # 向量存储接口
-├── Core/                  # 核心实现
-│   └── MemoryService      # 记忆服务实现
-├── LLMs/                  # LLM 提供者
-│   └── OpenAIProvider     # OpenAI 实现
-├── Embedders/             # 嵌入生成器
-│   └── OpenAIEmbedder     # OpenAI 嵌入实现
-├── VectorStores/          # 向量存储
-│   └── InMemoryVectorStore # 内存存储
-├── Models/                # 数据模型
-└── Config/                # 配置类
+├── Abstractions/          # Core interfaces
+│   ├── IMemoryService     # Memory service interface
+│   ├── ILLMProvider       # LLM provider interface
+│   ├── IEmbedder          # Embedding generator interface
+│   └── IVectorStore       # Vector store interface
+├── Core/                  # Core implementation
+│   └── MemoryService      # Memory service implementation
+├── LLMs/                  # LLM providers
+│   └── OpenAIProvider     # OpenAI implementation
+├── Embedders/             # Embedding generators
+│   └── OpenAIEmbedder     # OpenAI embedding implementation
+├── VectorStores/          # Vector stores
+│   └── InMemoryVectorStore # In-memory storage
+├── Models/                # Data models
+└── Config/                # Configuration classes
 ```
 
-### 工作流程
+### Workflow
 
-1. **添加记忆流程**：
-    - 接收用户消息
-    - 使用 LLM 提取结构化记忆
-    - 生成向量嵌入
-    - 检查相似记忆
-    - 合并或插入新记忆
+1. **Add Memory Flow**:
+    - Receive user messages
+    - Extract structured memories using LLM
+    - Generate vector embeddings
+    - Check for similar memories
+    - Merge or insert new memories
 
-2. **搜索记忆流程**：
-    - 生成查询向量
-    - 向量相似度搜索
-    - 可选的 LLM 重排序
-    - 返回相关记忆
+2. **Search Memory Flow**:
+    - Generate query vector
+    - Vector similarity search
+    - Optional LLM reranking
+    - Return relevant memories
 
-## 扩展性
+## Extensibility
 
-### 自定义向量存储
+### Custom Vector Store
 
 ```csharp
 public class QdrantVectorStore : IVectorStore
 {
-    // 实现 IVectorStore 接口
+    // Implement IVectorStore interface
 }
 
-// 注册自定义存储
+// Register custom store
 builder.Services.AddMemNet(config)
     .WithVectorStore<QdrantVectorStore>();
 ```
 
-### 自定义 LLM 提供者
+### Custom LLM Provider
 
 ```csharp
 public class AzureOpenAIProvider : ILLMProvider
 {
-    // 实现 ILLMProvider 接口
+    // Implement ILLMProvider interface
 }
 
 builder.Services.AddMemNet(config)
     .WithLLMProvider<AzureOpenAIProvider>();
 ```
 
-### 自定义知识图谱存储
+### Custom Knowledge Graph Store
 
 ```csharp
 public class Neo4jGraphStore : IGraphStore
 {
-    // 实现 IGraphStore 接口
+    // Implement IGraphStore interface
 }
 
 builder.Services.AddMemNet(config)
     .WithGraphStore<Neo4jGraphStore>();
 ```
 
-## API 参考
+## API Reference
 
 ### IMemoryService
 
-- `AddAsync(AddMemoryRequest)` - 添加记忆（自动提取实体关系）
-- `SearchAsync(SearchMemoryRequest)` - 搜索记忆
-- `GetAllAsync(userId, limit)` - 获取所有记忆
-- `GetAsync(memoryId)` - 获取单条记忆
-- `UpdateAsync(memoryId, content)` - 更新记忆
-- `DeleteAsync(memoryId)` - 删除记忆
-- `DeleteAllAsync(userId)` - 删除用户所有记忆
+- `AddAsync(AddMemoryRequest)` - Add memory (automatically extract entity relationships)
+- `SearchAsync(SearchMemoryRequest)` - Search memories
+- `GetAllAsync(userId, limit)` - Get all memories
+- `GetAsync(memoryId)` - Get single memory
+- `UpdateAsync(memoryId, content)` - Update memory
+- `DeleteAsync(memoryId)` - Delete memory
+- `DeleteAllAsync(userId)` - Delete all user memories
 
-### IGraphStore（知识图谱）
+### IGraphStore (Knowledge Graph)
 
-- `AddRelationsAsync(relations)` - 添加实体关系
-- `SearchEntitiesAsync(entityName)` - 搜索实体
-- `GetRelationsAsync(entityName)` - 获取实体的所有关系
-- `DeleteEntityAsync(entityName)` - 删除实体及其关系
+- `AddRelationsAsync(relations)` - Add entity relationships
+- `SearchEntitiesAsync(entityName)` - Search entities
+- `GetRelationsAsync(entityName)` - Get all relationships of an entity
+- `DeleteEntityAsync(entityName)` - Delete entity and its relationships
 
-## 配置选项
+## Configuration Options
 
-| 选项                 | 类型                | 默认值   | 说明           |
-|--------------------|-------------------|-------|--------------|
-| DuplicateThreshold | float             | 0.9   | 去重相似度阈值      |
-| EnableReranking    | bool              | false | 是否启用 LLM 重排序 |
-| HistoryLimit       | int               | 10    | 历史消息限制       |
-| GraphStore         | GraphStoreConfig? | null  | 知识图谱配置（可选）   |
+| Option             | Type              | Default | Description                   |
+|--------------------|-------------------|---------|-------------------------------|
+| DuplicateThreshold | float             | 0.9     | Similarity threshold for deduplication |
+| EnableReranking    | bool              | false   | Enable LLM reranking          |
+| HistoryLimit       | int               | 10      | History message limit         |
+| GraphStore         | GraphStoreConfig? | null    | Knowledge graph configuration (optional) |
 
-## 知识图谱功能说明
+## Knowledge Graph Features
 
-当启用知识图谱存储时，MemNet 会：
+When knowledge graph storage is enabled, MemNet will:
 
-1. 自动从对话中提取实体（人物、组织、地点、概念等）
-2. 识别实体之间的关系
-3. 构建知识图谱，增强记忆的关联性
-4. 支持基于实体的关系查询
+1. Automatically extract entities from conversations (people, organizations, places, concepts, etc.)
+2. Identify relationships between entities
+3. Build a knowledge graph to enhance memory associations
+4. Support entity-based relationship queries
 
-示例：
+Example:
 
 ```csharp
-// 添加包含实体的记忆
+// Add memory containing entities
 await memoryService.AddAsync(new AddMemoryRequest
 {
     Messages = new List<MessageContent>
     {
-        new() { Role = "user", Content = "张三在北京的微软公司工作" }
+        new() { Role = "user", Content = "John works at Microsoft in Seattle" }
     },
     UserId = "user_123"
 });
 
-// 系统会自动提取：
-// 实体: 张三(Person), 北京(Location), 微软(Organization)
-// 关系: 张三 -[works_at]-> 微软, 张三 -[lives_in]-> 北京
+// System will automatically extract:
+// Entities: John(Person), Seattle(Location), Microsoft(Organization)
+// Relations: John -[works_at]-> Microsoft, John -[located_in]-> Seattle
 ```
 
-## 许可证
+## License
 
 MIT License
 
-## 参考
+## Reference
 
-本项目完全复刻了 [Mem0](https://github.com/mem0ai/mem0) 的核心功能，使用 C# 实现。
+This project is a complete replication of [Mem0](https://github.com/mem0ai/mem0) core functionality, implemented in C#.

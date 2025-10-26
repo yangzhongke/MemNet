@@ -1,7 +1,7 @@
 namespace MemNet.Config;
 
 /// <summary>
-/// 记忆服务配置
+/// Memory service configuration
 /// </summary>
 public class MemoryConfig
 {
@@ -10,17 +10,17 @@ public class MemoryConfig
     public EmbedderConfig Embedder { get; set; } = new();
 
     /// <summary>
-    /// 去重阈值（余弦相似度）
+    /// Duplicate threshold (cosine similarity)
     /// </summary>
     public float DuplicateThreshold { get; set; } = 0.9f;
 
     /// <summary>
-    /// 是否启用重排序
+    /// Enable reranking
     /// </summary>
     public bool EnableReranking { get; set; } = false;
 
     /// <summary>
-    /// 历史消息限制
+    /// History message limit
     /// </summary>
     public int HistoryLimit { get; set; } = 10;
 }

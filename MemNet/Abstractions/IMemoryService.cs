@@ -6,43 +6,42 @@ using MemNet.Models;
 namespace MemNet.Abstractions;
 
 /// <summary>
-/// 记忆服务接口
+/// Memory service interface
 /// </summary>
 public interface IMemoryService
 {
     /// <summary>
-    /// 添加记忆
+    /// Add memory
     /// </summary>
     Task<AddMemoryResponse> AddAsync(AddMemoryRequest request, CancellationToken ct = default);
     
     /// <summary>
-    /// 搜索记忆
+    /// Search memories
     /// </summary>
     Task<List<MemorySearchResult>> SearchAsync(SearchMemoryRequest request, CancellationToken ct = default);
     
     /// <summary>
-    /// 获取所有记忆
+    /// Get all memories
     /// </summary>
     Task<List<MemoryItem>> GetAllAsync(string? userId = null, int limit = 100, CancellationToken ct = default);
     
     /// <summary>
-    /// 获取指定记忆
+    /// Get specific memory
     /// </summary>
     Task<MemoryItem?> GetAsync(string memoryId, CancellationToken ct = default);
     
     /// <summary>
-    /// 更新记忆
+    /// Update memory
     /// </summary>
     Task<bool> UpdateAsync(string memoryId, string content, CancellationToken ct = default);
     
     /// <summary>
-    /// 删除记忆
+    /// Delete memory
     /// </summary>
     Task DeleteAsync(string memoryId, CancellationToken ct = default);
     
     /// <summary>
-    /// 删除所有记忆
+    /// Delete all memories
     /// </summary>
     Task DeleteAllAsync(string userId, CancellationToken ct = default);
 }
-

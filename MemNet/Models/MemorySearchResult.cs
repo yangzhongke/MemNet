@@ -1,7 +1,7 @@
 namespace MemNet.Models;
 
 /// <summary>
-/// 搜索记忆结果
+/// Memory search result
 /// </summary>
 public class MemorySearchResult
 {
@@ -9,4 +9,3 @@ public class MemorySearchResult
     public MemoryItem Memory { get; set; } = new();
     public float Score { get; set; }
 }
-

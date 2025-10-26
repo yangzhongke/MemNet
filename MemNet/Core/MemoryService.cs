@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace MemNet.Core;
 
 /// <summary>
-///     记忆服务核心实现（复刻 Mem0 Memory 类）
+///     Memory service core implementation (replicating Mem0 Memory class)
 /// </summary>
 public class MemoryService : IMemoryService
 {
@@ -34,13 +34,13 @@ public class MemoryService : IMemoryService
 
     public async Task<AddMemoryResponse> AddAsync(AddMemoryRequest request, CancellationToken ct = default)
     {
-        // 1. 组合消息内容
+        // 1. Combine message content
         var messagesText = string.Join("\n", (IEnumerable<string>)request.Messages.Select(m => $"{m.Role}: {m.Content}"));
 
-        // 2. 使用 LLM 提取结构化记忆
+        // 2. Extract structured memories using LLM
         var extractedMemories = await _llm.ExtractMemoriesAsync(messagesText, ct);
 
-        // 3. 为每条记忆生成嵌入
+        // 3. Generate embeddings for each memory
         var memoriesToAdd = new List<MemoryItem>();
         foreach (var extracted in extractedMemories)
         {
@@ -58,7 +58,7 @@ public class MemoryService : IMemoryService
             });
         }
 
-        // 4. 检查是否存在相似记忆（去重）
+        // 4. Check for similar memories (deduplication)
         var toUpdate = new List<MemoryItem>();
         var toInsert = new List<MemoryItem>();
 
@@ -75,12 +75,12 @@ public class MemoryService : IMemoryService
 
             if (similar != null)
             {
-                // 使用 LLM 合并记忆
+                // Merge memories using LLM
                 var merged = await _llm.MergeMemoriesAsync(similar.Memory.Data, newMem.Data, ct);
                 similar.Memory.Data = merged;
                 similar.Memory.UpdatedAt = DateTime.UtcNow;
 
-                // 重新生成嵌入
+                // Regenerate embedding
                 similar.Memory.Embedding = await _embedder.EmbedAsync(merged, ct);
                 toUpdate.Add(similar.Memory);
             }
@@ -90,7 +90,7 @@ public class MemoryService : IMemoryService
             }
         }
 
-        // 5. 批量写入向量库
+        // 5. Batch write to vector store
         if (toInsert.Any())
         {
             await _vectorStore.InsertAsync(toInsert, ct);
@@ -100,7 +100,7 @@ public class MemoryService : IMemoryService
         {
             await _vectorStore.UpdateAsync(toUpdate, ct);
         }
-        // 6. 构建响应
+        // 6. Build response
         return new AddMemoryResponse
         {
             Results = toInsert.Select(m => new MemoryResult
@@ -119,17 +119,17 @@ public class MemoryService : IMemoryService
 
     public async Task<List<MemorySearchResult>> SearchAsync(SearchMemoryRequest request, CancellationToken ct = default)
     {
-        // 1. 生成查询向量
+        // 1. Generate query vector
         var queryEmbedding = await _embedder.EmbedAsync(request.Query, ct);
 
-        // 2. 向量相似度搜索
+        // 2. Vector similarity search
         var results = await _vectorStore.SearchAsync(
             queryEmbedding,
             request.UserId,
             request.Limit,
             ct);
 
-        // 3. 使用 LLM 重排序（可选）
+        // 3. Use LLM reranking (optional)
         if (_config.EnableReranking)
         {
             results = await _llm.RerankAsync(request.Query, results, ct);

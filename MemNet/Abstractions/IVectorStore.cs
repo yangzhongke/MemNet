@@ -6,43 +6,42 @@ using MemNet.Models;
 namespace MemNet.Abstractions;
 
 /// <summary>
-/// 向量存储接口（复刻 Mem0 vector_stores/base.py）
+/// Vector store interface (replicating Mem0 vector_stores/base.py)
 /// </summary>
 public interface IVectorStore
 {
     /// <summary>
-    /// 插入记忆
+    /// Insert memories
     /// </summary>
     Task InsertAsync(List<MemoryItem> memories, CancellationToken ct = default);
     
     /// <summary>
-    /// 更新记忆
+    /// Update memories
     /// </summary>
     Task UpdateAsync(List<MemoryItem> memories, CancellationToken ct = default);
     
     /// <summary>
-    /// 向量相似度搜索
+    /// Vector similarity search
     /// </summary>
     Task<List<MemorySearchResult>> SearchAsync(float[] queryVector, string? userId = null, int limit = 100, CancellationToken ct = default);
     
     /// <summary>
-    /// 获取指定用户的所有记忆
+    /// Get all memories for specified user
     /// </summary>
     Task<List<MemoryItem>> ListAsync(string? userId = null, int limit = 100, CancellationToken ct = default);
     
     /// <summary>
-    /// 根据ID获取记忆
+    /// Get memory by ID
     /// </summary>
     Task<MemoryItem?> GetAsync(string memoryId, CancellationToken ct = default);
     
     /// <summary>
-    /// 删除记忆
+    /// Delete memory
     /// </summary>
     Task DeleteAsync(string memoryId, CancellationToken ct = default);
     
     /// <summary>
-    /// 删除用户所有记忆
+    /// Delete all memories for user
     /// </summary>
     Task DeleteByUserAsync(string userId, CancellationToken ct = default);
 }
-

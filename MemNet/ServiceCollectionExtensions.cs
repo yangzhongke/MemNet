@@ -11,24 +11,24 @@ using Microsoft.Extensions.DependencyInjection;
 namespace MemNet;
 
 /// <summary>
-///     MemNet 服务注册扩展（复刻 Mem0 的配置模式）
+///     MemNet service registration extensions (replicating Mem0's configuration pattern)
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     添加 MemNet 服务
+    ///     Add MemNet services
     /// </summary>
     public static IServiceCollection AddMemNet(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // 注册配置
+        // Register configuration
         services.Configure<MemoryConfig>(configuration.GetSection("MemNet"));
 
-        // 注册核心服务
+        // Register core services
         services.AddScoped<IMemoryService, MemoryService>();
 
-        // 注册默认实现
+        // Register default implementations
         services.AddHttpClient<ILLMProvider, OpenAIProvider>();
         services.AddHttpClient<IEmbedder, OpenAIEmbedder>();
         services.AddSingleton<IVectorStore, InMemoryVectorStore>();
@@ -37,19 +37,19 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     添加 MemNet 服务（使用配置对象）
+    ///     Add MemNet services (using configuration object)
     /// </summary>
     public static IServiceCollection AddMemNet(
         this IServiceCollection services,
         Action<MemoryConfig> configureOptions)
     {
-        // 注册配置
+        // Register configuration
         services.Configure(configureOptions);
 
-        // 注册核心服务
+        // Register core services
         services.AddScoped<IMemoryService, MemoryService>();
 
-        // 注册默认实现
+        // Register default implementations
         services.AddHttpClient<ILLMProvider, OpenAIProvider>();
         services.AddHttpClient<IEmbedder, OpenAIEmbedder>();
         services.AddSingleton<IVectorStore, InMemoryVectorStore>();
@@ -58,7 +58,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     使用自定义向量存储
+    ///     Use custom vector store
     /// </summary>
     public static IServiceCollection WithVectorStore<T>(
         this IServiceCollection services)
@@ -69,7 +69,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     使用自定义 LLM 提供者
+    ///     Use custom LLM provider
     /// </summary>
     public static IServiceCollection WithLLMProvider<T>(
         this IServiceCollection services)
@@ -80,7 +80,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     使用自定义嵌入器
+    ///     Use custom embedder
     /// </summary>
     public static IServiceCollection WithEmbedder<T>(
         this IServiceCollection services)

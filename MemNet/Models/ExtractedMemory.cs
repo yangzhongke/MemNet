@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace MemNet.Models;
 
 /// <summary>
-/// LLM 提取的记忆
+/// Memory extracted by LLM
 /// </summary>
 public class ExtractedMemory
 {

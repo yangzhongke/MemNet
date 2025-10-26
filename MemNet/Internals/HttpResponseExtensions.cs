@@ -14,7 +14,7 @@ public static class HttpResponseExtensions
         }
 
         string content = await response.Content.ReadAsStringAsync();
-        string message = $"Error: {(int)response.StatusCode} {response.ReasonPhrase}\nResponse Body：{content}";
+        string message = $"Error: {(int)response.StatusCode} {response.ReasonPhrase}\nResponse Body: {content}";
         throw new HttpRequestException(message);
     }
 }

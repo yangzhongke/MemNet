@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace MemNet.Models;
 
 /// <summary>
-/// 搜索记忆请求
+/// Search memory request
 /// </summary>
 public class SearchMemoryRequest
 {
@@ -14,4 +14,3 @@ public class SearchMemoryRequest
     public int Limit { get; set; } = 100;
     public Dictionary<string, object>? Filters { get; set; }
 }
-
