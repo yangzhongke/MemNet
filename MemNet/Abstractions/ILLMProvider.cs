@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using MemNet.Models;
 
 namespace MemNet.Abstractions;
@@ -22,9 +25,4 @@ public interface ILLMProvider
     /// </summary>
     Task<List<MemorySearchResult>> RerankAsync(string query, List<MemorySearchResult> results,
         CancellationToken ct = default);
-
-    /// <summary>
-    ///     从文本中提取实体和关系
-    /// </summary>
-    Task<List<EntityRelation>> ExtractEntitiesAsync(string text, CancellationToken ct = default);
 }

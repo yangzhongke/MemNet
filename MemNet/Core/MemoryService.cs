@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MemNet.Abstractions;
 using MemNet.Config;
 using MemNet.Models;
@@ -12,7 +17,6 @@ public class MemoryService : IMemoryService
 {
     private readonly MemoryConfig _config;
     private readonly IEmbedder _embedder;
-    private readonly IGraphStore? _graphStore;
     private readonly ILLMProvider _llm;
     private readonly IVectorStore _vectorStore;
 
@@ -20,20 +24,18 @@ public class MemoryService : IMemoryService
         IVectorStore vectorStore,
         ILLMProvider llm,
         IEmbedder embedder,
-        IOptions<MemoryConfig> config,
-        IGraphStore? graphStore = null)
+        IOptions<MemoryConfig> config)
     {
         _vectorStore = vectorStore;
         _llm = llm;
         _embedder = embedder;
-        _graphStore = graphStore;
         _config = config.Value;
     }
 
     public async Task<AddMemoryResponse> AddAsync(AddMemoryRequest request, CancellationToken ct = default)
     {
         // 1. 组合消息内容
-        var messagesText = string.Join("\n", request.Messages.Select(m => $"{m.Role}: {m.Content}"));
+        var messagesText = string.Join("\n", (IEnumerable<string>)request.Messages.Select(m => $"{m.Role}: {m.Content}"));
 
         // 2. 使用 LLM 提取结构化记忆
         var extractedMemories = await _llm.ExtractMemoriesAsync(messagesText, ct);
@@ -98,18 +100,7 @@ public class MemoryService : IMemoryService
         {
             await _vectorStore.UpdateAsync(toUpdate, ct);
         }
-
-        // 6. 更新知识图谱（如果启用）
-        if (_graphStore != null && _config.GraphStore != null)
-        {
-            var entities = await _llm.ExtractEntitiesAsync(messagesText, ct);
-            if (entities.Any())
-            {
-                await _graphStore.AddRelationsAsync(entities, ct);
-            }
-        }
-
-        // 7. 构建响应
+        // 6. 构建响应
         return new AddMemoryResponse
         {
             Results = toInsert.Select(m => new MemoryResult

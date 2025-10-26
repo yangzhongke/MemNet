@@ -1,3 +1,4 @@
+﻿using System;
 using MemNet;
 using MemNet.Abstractions;
 using MemNet.Models;
@@ -6,18 +7,18 @@ using Microsoft.Extensions.DependencyInjection;
 var services = new ServiceCollection();
 services.AddMemNet(config =>
 {
-    config.LLM.Endpoint = "https://yangz-mf8s64eg-eastus2.cognitiveservices.azure.com/openai/v1/";
-    config.LLM.Model = "gpt-5-nano";
-    config.LLM.ApiKey = "";
-
     config.Embedder.Endpoint = "https://personalopenai1.openai.azure.com/openai/v1/";
     config.Embedder.Model = "text-embedding-3-large";
-    config.Embedder.ApiKey = "";
+    config.Embedder.ApiKey = Environment.GetEnvironmentVariable("OpenAIEmbeddingKey");
+
+    config.LLM.Endpoint = "https://yangz-mf8s64eg-eastus2.cognitiveservices.azure.com/openai/v1/";
+    config.LLM.Model = "gpt-5-nano";
+    config.LLM.ApiKey = Environment.GetEnvironmentVariable("OpenAIChatKey");
 
     config.EnableReranking = true;
 });
 
-using var sp = services.BuildServiceProvider();
+await using var sp = services.BuildServiceProvider();
 var memoryService = sp.GetRequiredService<IMemoryService>();
 await memoryService.AddAsync(new AddMemoryRequest
 {

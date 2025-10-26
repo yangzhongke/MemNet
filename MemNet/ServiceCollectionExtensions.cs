@@ -1,8 +1,8 @@
+using System;
 using MemNet.Abstractions;
 using MemNet.Config;
 using MemNet.Core;
 using MemNet.Embedders;
-using MemNet.GraphStores;
 using MemNet.LLMs;
 using MemNet.VectorStores;
 using Microsoft.Extensions.Configuration;
@@ -32,13 +32,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ILLMProvider, OpenAIProvider>();
         services.AddHttpClient<IEmbedder, OpenAIEmbedder>();
         services.AddSingleton<IVectorStore, InMemoryVectorStore>();
-
-        // 注册知识图谱存储（可选）
-        var config = configuration.GetSection("MemNet").Get<MemoryConfig>();
-        if (config?.GraphStore != null)
-        {
-            services.AddSingleton<IGraphStore, InMemoryGraphStore>();
-        }
 
         return services;
     }
@@ -94,27 +87,6 @@ public static class ServiceCollectionExtensions
         where T : class, IEmbedder
     {
         services.AddHttpClient<IEmbedder, T>();
-        return services;
-    }
-
-    /// <summary>
-    ///     启用知识图谱存储
-    /// </summary>
-    public static IServiceCollection WithGraphStore<T>(
-        this IServiceCollection services)
-        where T : class, IGraphStore
-    {
-        services.AddSingleton<IGraphStore, T>();
-        return services;
-    }
-
-    /// <summary>
-    ///     启用默认知识图谱存储（内存存储）
-    /// </summary>
-    public static IServiceCollection WithGraphStore(
-        this IServiceCollection services)
-    {
-        services.AddSingleton<IGraphStore, InMemoryGraphStore>();
         return services;
     }
 }
