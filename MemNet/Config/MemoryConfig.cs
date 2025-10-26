@@ -27,7 +27,6 @@ public class MemoryConfig
 
 public class VectorStoreConfig
 {
-    public string Provider { get; set; } = "qdrant"; // qdrant, milvus, chroma, inmemory
     public string Endpoint { get; set; } = "http://localhost:6333";
     public string CollectionName { get; set; } = "memories";
     public string? ApiKey { get; set; }
@@ -35,7 +34,6 @@ public class VectorStoreConfig
 
 public class LLMConfig
 {
-    public string Provider { get; set; } = "openai";
     public string Model { get; set; } = "gpt-4";
     public string? ApiKey { get; set; }
     public string? Endpoint { get; set; }
@@ -43,7 +41,6 @@ public class LLMConfig
 
 public class EmbedderConfig
 {
-    public string Provider { get; set; } = "openai";
     public string Model { get; set; } = "text-embedding-3-small";
     public string? ApiKey { get; set; }
     public string? Endpoint { get; set; }
