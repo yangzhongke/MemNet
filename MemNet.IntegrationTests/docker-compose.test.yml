@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: memnet-test-chroma
+    ports:
+      - "8000:8000"
+    environment:
+      - ALLOW_RESET=TRUE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  milvus:
+    image: milvusdb/milvus:latest
+    container_name: memnet-test-milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    environment:
+      - ETCD_USE_EMBED=true
+      - COMMON_STORAGETYPE=local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+    volumes:
+      - milvus_data:/var/lib/milvus
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: memnet-test-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  chroma_data:
+  milvus_data:
+  qdrant_data:
+

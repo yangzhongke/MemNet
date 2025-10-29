@@ -1,0 +1,120 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      chroma:
+        image: chromadb/chroma:latest
+        ports:
+          - 8000:8000
+        env:
+          ALLOW_RESET: TRUE
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+          --health-start-period 10s
+
+      milvus:
+        image: milvusdb/milvus:latest
+        ports:
+          - 19530:19530
+          - 9091:9091
+        env:
+          ETCD_USE_EMBED: true
+          COMMON_STORAGETYPE: local
+        options: >-
+          --health-cmd "curl -f http://localhost:9091/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 30s
+
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+          - 6334:6334
+        options: >-
+          --health-cmd "curl -f http://localhost:6333/healthz || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+          --health-start-period 10s
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for Chroma..."
+        timeout 60 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 2; done'
+        echo "Waiting for Milvus..."
+        timeout 120 bash -c 'until curl -f http://localhost:9091/healthz; do sleep 5; done'
+        echo "Waiting for Qdrant..."
+        timeout 60 bash -c 'until curl -f http://localhost:6333/healthz; do sleep 2; done'
+        echo "All services are ready!"
+
+    - name: Run Integration Tests
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        TEST_CHROMA_ENDPOINT: http://localhost:8000
+        TEST_MILVUS_ENDPOINT: http://localhost:19530
+        TEST_QDRANT_ENDPOINT: http://localhost:6333
+      run: |
+        dotnet test MemNet.IntegrationTests/MemNet.IntegrationTests.csproj \
+          --no-build \
+          --configuration Release \
+          --logger "trx;LogFileName=test-results.trx" \
+          --logger "console;verbosity=detailed" \
+          --collect:"XPlat Code Coverage"
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          **/TestResults/**/*.trx
+          **/TestResults/**/*.xml
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          **/TestResults/**/*.trx
+
+    - name: Upload Coverage Reports
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        files: '**/TestResults/**/coverage.cobertura.xml'
+        fail_ci_if_error: false
+

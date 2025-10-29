@@ -4,7 +4,30 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>13</LangVersion>
         <Nullable>enable</Nullable>
+        
+        <!-- NuGet Package Metadata -->
+        <PackageId>MemNet</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>MemNet Contributors</Authors>
+        <Company>MemNet</Company>
+        <Description>A .NET implementation of Mem0-like memory service with support for multiple vector stores (Chroma, Milvus, Qdrant) and OpenAI integration.</Description>
+        <PackageTags>memory;vector-store;embeddings;llm;openai;chroma;milvus;qdrant;ai</PackageTags>
+        <PackageProjectUrl>https://github.com/yourusername/MemNet</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/yourusername/MemNet</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
@@ -12,5 +35,6 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
         <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
 </Project>
