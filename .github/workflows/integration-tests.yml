@@ -28,26 +28,18 @@ jobs:
         ports:
           - 6333:6333
           - 6334:6334
-        
-      milvus:
-        image: milvusdb/milvus:latest
-        ports:
-          - 19530:19530
-          - 9091:9091
-        env:
-          ETCD_USE_EMBED: true
-          MINIO_USE_EMBED: true
-          ROCKSMQ_USE_EMBED: true
-        options: >-
-          --entrypoint /bin/bash
-          --health-cmd "curl -f http://localhost:9091/healthz || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --
-          -c "milvus run standalone"
 
     steps:
+    - name: Start Milvus (standalone mode)
+      run: |
+        docker run -d \
+          --name milvus \
+          -p 19530:19530 -p 9091:9091 \
+          -e ETCD_USE_EMBED=true \
+          -e MINIO_USE_EMBED=true \
+          -e ROCKSMQ_USE_EMBED=true \
+          milvusdb/milvus:latest \
+          milvus run standalone
     - name: Checkout code
       uses: actions/checkout@v4
 
