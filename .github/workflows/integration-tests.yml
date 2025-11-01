@@ -40,11 +40,12 @@ jobs:
           MINIO_USE_EMBED: true
           ROCKSMQ_USE_EMBED: true
         options: >-
+          --entrypoint /tini
           --health-cmd "curl -f http://localhost:9091/healthz || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
-        command: ["milvus", "run", "standalone"]
+          -- /milvus run standalone
 
     steps:
     - name: Checkout code
