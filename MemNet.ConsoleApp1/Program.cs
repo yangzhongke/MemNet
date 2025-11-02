@@ -58,24 +58,28 @@ await memoryService.AddAsync(new AddMemoryRequest
         {
             Role = "User",
             Content = "I'm 20 years old."
+        },
+        new MessageContent
+        {
+            Role = "User",
+            Content = "I'm allergic to nuts."
         }
     ],
     UserId = "user001"
 });
 
-
+/*
 Console.WriteLine("All memories");
 foreach (var item in await memoryService.GetAllAsync( "user001"))
 {
     Console.WriteLine($"- {item.Data}");
 }
-
-return;
+*/
 Console.WriteLine("Search Results:");
 
 var resp = await memoryService.SearchAsync(new SearchMemoryRequest
 {
-    Query = "What do I like?", //"Am I old?",
+    Query = "Please recommend some food.", //"Am I old?",
     UserId = "user001"
 });
 foreach (var item in resp.ToArray())
