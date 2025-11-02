@@ -28,35 +28,39 @@ jobs:
         ports:
           - 6333:6333
           - 6334:6334
-      milvus:
-        image: milvusdb/milvus:v2.4.4
+      etcd:
+        image: quay.io/coreos/etcd:v3.5.5
+        environment:
+          ETCD_AUTO_COMPACTION_MODE: revision
+          ETCD_AUTO_COMPACTION_RETENTION: "1000"
+          ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+          ETCD_SNAPSHOT_COUNT: "50000"
+        healthcheck:
+          test: ["CMD", "etcdctl", "endpoint", "health"]
         ports:
-          - 19530:19530
-          - 9091:9091
-        env:
-          ETCD_USE_EMBED: true
-          MINIO_USE_EMBED: true
-          ROCKSMQ_USE_EMBED: true
-        # Tell Docker to start Milvus manually with bash -c
-        options: >-
-          --entrypoint /bin/bash
-          --health-cmd "curl -f http://localhost:9091/healthz || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --
-          -c "milvus run standalone"
+          - "2379:2379"
+    
+      minio:
+        image: minio/minio:RELEASE.2024-02-17T01-36-00Z
+        environment:
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+        command: server /data
+        ports:
+          - "9000:9000"
+    
+      milvus:
+        image: milvusdb/milvus:latest
+        container_name: milvus
+        environment:
+          ETCD_ENDPOINTS: etcd:2379
+          MINIO_ADDRESS: minio:9000
+        depends_on:
+          - etcd
+          - minio
+        ports:
+          - "19530:19530"
     steps:
-#    - name: Start Milvus (standalone mode)
-#      run: |
-#        docker run -d \
-#          --name milvus \
-#          -p 19530:19530 -p 9091:9091 \
-#          -e ETCD_USE_EMBED=true \
-#          -e MINIO_USE_EMBED=true \
-#          -e ROCKSMQ_USE_EMBED=true \
-#          milvusdb/milvus:latest \
-#          milvus run standalone
     - name: Checkout code
       uses: actions/checkout@v4
 
