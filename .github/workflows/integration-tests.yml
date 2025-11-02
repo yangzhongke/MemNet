@@ -30,6 +30,20 @@ jobs:
           - 6334:6334
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+      
     - name: Download Milvus standalone script
       run: |
         curl -sfL https://raw.githubusercontent.com/milvus-io/milvus/master/scripts/standalone_embed.sh -o standalone_embed.sh
@@ -44,21 +58,10 @@ jobs:
       run: |
         docker ps
         curl -f http://localhost:9091/healthz || (echo "Milvus failed to start" && exit 1)
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+        
     - name: Wait for Services to be Ready
       run: sleep 10
+      
     - name: Run Integration Tests
       env:
         EMBEDDER_API_KEY: ${{ secrets.EMBEDDER_API_KEY }}
