@@ -114,8 +114,10 @@ public static class ServiceCollectionExtensions
     ///     Use Chroma(V2) vector store
     /// </summary>
     public static IServiceCollection WithChromaV2(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.Configure<ChromaV2VectorStoreConfig>(configuration.GetSection("MemNet"));
         services.AddHttpClient<IVectorStore, ChromaV2VectorStore>();
         return services;
     }

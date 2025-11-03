@@ -31,7 +31,6 @@ services.AddMemNet(config =>
 services.Configure<ChromaV2VectorStoreConfig>(e =>
 {
 e.Endpoint = "http://localhost:8000";
-e.CollectionId = "a9e2f1f4-e2bf-4e86-bcda-115af5fe9b3b";
 e.Database = "default";
 e.Tenant = "default";
 });*/

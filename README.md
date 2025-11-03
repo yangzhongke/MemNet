@@ -7,15 +7,7 @@ MemNet 是为 .NET 开发者设计的“自我完善”记忆层，旨在为基�
 - 支持多种存储后端（内存、Qdrant、Redis、Chroma、Milvus等），便于扩展与持久化。
 - 与任意 LLM/Embedding 提供方集成（可插拔 Embedding 层）。
 
-## 核心特性
-- 记忆的插入、检索（基于相似度）与删除。
-- 向量化与相似度搜索（可配置 Embedding 提供者）。
-- 记忆合并/摘要（consolidation）机制以减少冗余。
-- 本地或远程持久化（文件/SQLite/Redis/向量 DB）。
-- 异步 API 支持高并发场景。
-- 可配置的过期（TTL）、命名空间/会话支持。
-
-## 安装（How to install）
+## 安装
 使用 dotnet CLI：
 ```
 dotnet add package MemNet
@@ -26,97 +18,158 @@ dotnet add package MemNet
 Install-Package MemNet
 ```
 
-或者在 csproj 中直接加入：
-```xml
-<PackageReference Include="MemNet" Version="*.*.*" />
-```
+## 快速开始
 
-（注意：将上面的包名/版本替换为你实际的 NuGet 包名和版本）
+### 1. 配置 appsettings.json
 
-## 快速开始（Basic example）
-下面示例为最小化伪代码/示例，展示插入和检索记忆的典型流程。API 名称以常见风格示例，实际使用请参照库的公开 API 文档。
+首先在项目的 `appsettings.json` 文件中配置 Embedder、LLM 和 VectorStore：
 
-```csharp
-using MemNet;
-using System;
-using System.Threading.Tasks;
-
-class Program
+```json
 {
-    static async Task Main()
-    {
-        // 初始化 MemNet 客户端（示例）
-        var mem = new MemNetClient(new MemNetOptions
-        {
-            // 可选：指定向量化/embedding 提供者、存储后端等
-            Storage = new InMemoryStore(),
-            EmbeddingProvider = new OpenAIEmbeddingProvider(apiKey: "YOUR_KEY")
-        });
-
-        // 插入记忆
-        await mem.UpsertMemoryAsync("user:alice", new MemoryRecord
-        {
-            Id = Guid.NewGuid().ToString(),
-            Content = "Alice viewed the pricing page and liked the Pro plan.",
-            Timestamp = DateTime.UtcNow
-        });
-
-        // 基于查询检索相关记忆
-        var related = await mem.QueryMemoriesAsync("user:alice", "what did Alice do earlier?", topK: 5);
-        foreach (var r in related)
-        {
-            Console.WriteLine($"{r.Score:F3} - {r.Content}");
-        }
+  "MemNet": {
+    "Embedder": {
+      "Endpoint": "https://api.openai.com/v1/",
+      "Model": "text-embedding-3-large",
+      "ApiKey": "your-embedding-api-key"
+    },
+    "LLM": {
+      "Endpoint": "https://api.openai.com/v1/",
+      "Model": "gpt-4",
+      "ApiKey": "your-llm-api-key"
     }
+  }
 }
 ```
 
-## 进阶示例（Advanced）
+> **提示：** 为了安全起见，建议使用更安全的方式存储 API 密钥，而不是直接写在配置文件中。
 
-1) 使用持久化（SQLite）+ 本地向量存储
+### 2. 注册服务
+
+在 `Program.cs` 中注册 MemNet 服务：
+
 ```csharp
-var mem = new MemNetClient(new MemNetOptions
+using MemNet;
+using MemNet.Abstractions;
+using MemNet.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")//Need Nuget Package：Microsoft.Extensions.Configuration.Json
+    .Build();
+
+var services = new ServiceCollection();
+services.AddMemNet(configuration);
+
+await using var serviceProvider = services.BuildServiceProvider();
+var memoryService = serviceProvider.GetRequiredService<IMemoryService>();
+await memoryService.InitializeAsync();
+```
+
+### 3. 添加记忆
+
+```csharp
+await memoryService.AddAsync(new AddMemoryRequest
 {
-    Storage = new SqliteStore("memnet.db"),
-    VectorIndex = new FaissLikeLocalIndex(path: "vectors.index"),
-    EmbeddingProvider = new CustomEmbeddingProvider(/*...*/)
+    Messages =
+    [
+        new MessageContent
+        {
+            Role = "User",
+            Content = "My name is Zack. I love programming."
+        },
+        new MessageContent
+        {
+            Role = "User",
+            Content = "As a 18-years-old boy, I'm into Chinese food."
+        },
+        new MessageContent
+        {
+            Role = "User",
+            Content = "I'm allergic to nuts."
+        }
+    ],
+    UserId = "user001"
 });
 ```
-用途：在重启后保留记忆并支持快速相似度检索。
 
-2) 自定义 Embedding 提供者
-- 实现 IEmbeddingProvider 接口以使用内部或第三方 embedding 服务（OpenAI, HuggingFace, 本地模型等）。
-- 将实现注入到 MemNetOptions.EmbeddingProvider。
+### 4. 搜索记忆
 
-3) 记忆合并与清理策略
-- 配置合并规则（例如按时间窗口合并相似短事件为摘要）。
-- 配置 TTL（自动过期）以控制长期记忆池大小：
 ```csharp
-mem.Config.MemoryTtl = TimeSpan.FromDays(30);
-mem.Config.ConsolidationThreshold = 0.85; // 相似度阈值
+var searchResults = await memoryService.SearchAsync(new SearchMemoryRequest
+{
+    Query = "Please recommend some food.",
+    UserId = "user001"
+});
+
+Console.WriteLine("Search Results:");
+foreach (var item in searchResults)
+{
+    Console.WriteLine($"- {item.Memory.Data}");
+}
+```
+执行结果：
+```
+Search Results:
+- Cuisine preference: Chinese food
+- Allergy: nuts
 ```
 
-4) 并发与批处理
-- 使用异步批处理接口批量插入/向量化以提高吞吐：
+### 5. 使用不同的向量存储
+MemNet 默认使用内存向量存储，适合开发和测试环境。在生产环境中，建议使用持久化的向量存储后端，以确保记忆数据的持久化和可扩展性。
+
+MemNet 支持多种向量存储后端：
+
+
+#### 使用 Qdrant
+
+在appsettings.json中增加向量数据库配置（修改如下配置中的值为实际的值）:
+```
+"VectorStore": {
+    "Endpoint": "your-Qdrant-endpoint，比如http://localhost:6333",
+    "ApiKey": "your-Qdrant-apikey(可选的)",
+    "CollectionName": "your-collection-name(可选的，默认是'memnet_collection')"
+}
+```
+然后修改注册代码：
 ```csharp
-await mem.UpsertMemoriesAsync(userId, batchOfRecords);
+services.AddMemNet(configuration).WithQdrant();
 ```
 
-5) 多租户／命名空间
-- 每个用户/会话使用独立命名空间或前缀来隔离记忆：
+#### 使用 Chroma
+
+在appsettings.json中增加向量数据库配置（修改如下配置中的值为实际的值）:
+```
+"VectorStore": {
+    "Endpoint": "your-Qdrant-endpoint，比如http://localhost:6333",
+    "ApiKey": "your-Qdrant-apikey(可选的)",
+    "CollectionName": "your-collection-name(可选的，默认是'memnet_collection')"
+}
+```
+然后修改注册代码：
 ```csharp
-await mem.UpsertMemoryAsync(namespace: "tenantA:user:alice", record);
+services.AddMemNet(configuration).WithQdrant();
 ```
 
-## 调优建议
-- 为频繁查询的场景减少检索 topK 并增加融合摘要以降低上下文长度。
-- 对高吞吐写入使用批量向量化与后台合并作业。
-- 根据数据量选择合适的向量索引（内存索引 vs. disk-backed vs. 专用向量 DB）。
+#### 使用 Milvus
+在appsettings.json中增加向量数据库配置（修改如下配置中的值为实际的值）:
+```
+"VectorStore": {
+    "Endpoint": "your-Qdrant-endpoint，比如http://localhost:6333",
+    "ApiKey": "your-Qdrant-apikey(可选的)",
+    "CollectionName": "your-collection-name(可选的，默认是'memnet_collection')"
+}
+```
+然后修改注册代码：
+```csharp
+services.AddMemNet(configuration).WithQdrant();
+```
 
-## API 与文档
-请参阅项目的 API 文档以获取详细类/方法说明、配置项与示例（链接或本地 docs 位置）。
+#### 使用 Redis（需要安装 MemNet.Redis 包）
+```csharp
+services.AddMemNet(config => { /* ... */ }).WithMemNetRedis("localhost:6379");
+```
 
-## 贡献与许可
-- 欢迎通过 PR/Issue 贡献功能或修复。
-- 请在提交前查看贡献指南与代码风格（若存在）。
-- 许可证信息请参阅仓库根目录 LICENSE 文件。
+
+
+## 进阶示例
