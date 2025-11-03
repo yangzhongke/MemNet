@@ -104,5 +104,12 @@ public class TestConfiguration
                ?? Environment.GetEnvironmentVariable("TEST_QDRANT_ENDPOINT") 
                ?? "http://localhost:6333";
     }
+
+    public static string GetRedisEndpoint()
+    {
+        return Configuration["Redis:Endpoint"] 
+               ?? Environment.GetEnvironmentVariable("TEST_REDIS_ENDPOINT") 
+               ?? "localhost:6379";
+    }
 }
 

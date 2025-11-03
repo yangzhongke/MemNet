@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemNet.ConsoleApp1", "MemNe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemNet.IntegrationTests", "MemNet.IntegrationTests\MemNet.IntegrationTests.csproj", "{33F85602-AFB4-4D51-B3F0-B710405CA3D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemNet.Redis", "MemNet.Redis\MemNet.Redis.csproj", "{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,18 @@ Global
 		{33F85602-AFB4-4D51-B3F0-B710405CA3D0}.Release|x64.Build.0 = Release|Any CPU
 		{33F85602-AFB4-4D51-B3F0-B710405CA3D0}.Release|x86.ActiveCfg = Release|Any CPU
 		{33F85602-AFB4-4D51-B3F0-B710405CA3D0}.Release|x86.Build.0 = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|x64.Build.0 = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|x64.ActiveCfg = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|x64.Build.0 = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|x86.ActiveCfg = Release|Any CPU
+		{7D2C9FD0-E26A-42CA-B69F-B3EB22E5D9CD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

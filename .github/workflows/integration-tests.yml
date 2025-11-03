@@ -29,6 +29,11 @@ jobs:
           - 6333:6333
           - 6334:6334
 
+      redis:
+        image: redis/redis:latest
+        ports:
+          - 6379:6379
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

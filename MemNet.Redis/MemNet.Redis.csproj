@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <PackageId>MemNet.Redis</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>MemNet Contributors</Authors>
+    <Company>MemNet</Company>
+    <Description>Redis vector store implementation for MemNet - providing vector similarity search capabilities using Redis Stack.</Description>
+    <PackageTags>memory;vector-store;embeddings;llm;redis;redis-stack;ai;memnet</PackageTags>
+    <PackageProjectUrl>https://github.com/yangzhongke/MemNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yangzhongke/MemNet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MemNet\MemNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageReference Include="NRedisStack" Version="0.13.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
