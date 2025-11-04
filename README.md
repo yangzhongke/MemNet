@@ -98,6 +98,8 @@ await memoryService.AddAsync(new AddMemoryRequest
 });
 ```
 
+UserId is used to distinguish memory data between different users. It also supports finer-grained differentiation through dimensions such as AgentId and RunId.
+
 ### 4. Search Memories
 
 ```csharp
@@ -179,19 +181,19 @@ services.AddMemNet(configuration).WithMilvusV2();
 
 #### Using Redis (Requires MemNet.Redis package)
 
+Add vector database configuration to appsettings.json (replace the values with your actual values):
+```
+"VectorStore": {
+    "Endpoint": "your-Redis-address, e.g., localhost:6379",
+    "ApiKey": "your-Redis-username-and-password (optional), e.g. user:password",
+    "CollectionName": "your-collection-name (optional, default is 'memnet_collection')"
+}
+```
+
 ```csharp
 services.AddMemNet(configuration).WithMemNetRedis("connection-string, e.g., localhost:6379");
 ```
 
-## Advanced Examples
+#### More Vector Store Support
 
-Coming soon...
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+Please refer to the MemNet.Redis project to customize support for other vector stores. Contributions via pull requests to add new integrations are welcome.

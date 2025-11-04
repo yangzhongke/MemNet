@@ -1,6 +1,7 @@
 using System;
 using MemNet.Abstractions;
 using MemNet.Config;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
@@ -15,9 +16,11 @@ public static class RedisServiceCollectionExtensions
     /// Add MemNet with Redis vector store support using VectorStoreConfig
     /// </summary>
     /// <param name="services">Service collection</param>
+    /// <param name="configuration">configuration</param>
     /// <param name="configureOptions">Optional Redis configuration options</param>
     public static IServiceCollection WithMemNetRedis(
         this IServiceCollection services,
+        IConfiguration configuration,
         Action<ConfigurationOptions>? configureOptions = null)
     {
         services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -53,7 +56,7 @@ public static class RedisServiceCollectionExtensions
         });
 
         services.AddSingleton<IVectorStore, RedisVectorStore>();
-
+        services.Configure<VectorStoreConfig>(configuration.GetSection("MemNet:VectorStore"));
         return services;
     }
 
@@ -61,10 +64,12 @@ public static class RedisServiceCollectionExtensions
     /// Add MemNet with Redis vector store support
     /// </summary>
     /// <param name="services">Service collection</param>
+    /// <param name="configuration">configuration</param>
     /// <param name="connectionString">Redis connection string</param>
     /// <param name="configureOptions">Optional Redis configuration options</param>
     public static IServiceCollection WithMemNetRedis(
         this IServiceCollection services,
+        IConfiguration configuration,
         string connectionString,
         Action<ConfigurationOptions>? configureOptions = null)
     {
@@ -81,7 +86,7 @@ public static class RedisServiceCollectionExtensions
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(options));
         // Register RedisVectorStore
         services.AddSingleton<IVectorStore, RedisVectorStore>();
-
+        services.Configure<VectorStoreConfig>(configuration.GetSection("MemNet:VectorStore"));
         return services;
     }
 }

@@ -1,5 +1,6 @@
 # MemNet
 MemNet 是为 .NET 开发者设计的“自我完善”记忆层，旨在为基于大模型（LLM）的应用提供长期与短期记忆管理、相似度检索、记忆合并/精简和持久化等功能，方便在对话、推荐、个性化与场景感知应用中复用历史上下文。
+
 说人话就是：LLM是没有状态的，而MemNet帮你记住用户之前的行为和对话内容，从而让应用更智能、更个性化。
 ## 为什么使用 MemNet
 - 将零散对话/事件转换为可检索的记忆，提高上下文感知能力。
@@ -55,7 +56,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json")//Need Nuget Package：Microsoft.Extensions.Configuration.Json
+    .AddJsonFile("appsettings.json")//需要 Nuget 包：Microsoft.Extensions.Configuration.Json
     .Build();
 
 var services = new ServiceCollection();
@@ -76,29 +77,31 @@ await memoryService.AddAsync(new AddMemoryRequest
         new MessageContent
         {
             Role = "User",
-            Content = "My name is Zack. I love programming."
+            Content = "我叫杨中科，我喜欢编程。"
         },
         new MessageContent
         {
             Role = "User",
-            Content = "As a 18-years-old boy, I'm into Chinese food."
+            Content = "作为一名18岁的帅哥, 我喜欢中餐."
         },
         new MessageContent
         {
             Role = "User",
-            Content = "I'm allergic to nuts."
+            Content = "我对坚果过敏。"
         }
     ],
     UserId = "user001"
 });
 ```
 
+UserId 用于区分不同用户的记忆数据。还支持AgentId、RunId等维度进行更细粒度的区分。
+
 ### 4. 搜索记忆
 
 ```csharp
 var searchResults = await memoryService.SearchAsync(new SearchMemoryRequest
 {
-    Query = "Please recommend some food.",
+    Query = "给我推荐一些美食。",
     UserId = "user001"
 });
 
@@ -111,15 +114,14 @@ foreach (var item in searchResults)
 执行结果：
 ```
 Search Results:
-- Cuisine preference: Chinese food
-- Allergy: nuts
+- 偏好：喜欢中餐
+- 过敏信息：对坚果过敏
 ```
 
 ### 5. 使用不同的向量存储
 MemNet 默认使用内存向量存储，适合开发和测试环境。在生产环境中，建议使用持久化的向量存储后端，以确保记忆数据的持久化和可扩展性。
 
 MemNet 支持多种向量存储后端：
-
 
 #### 使用 Qdrant
 
@@ -168,6 +170,19 @@ services.AddMemNet(configuration).WithMilvusV2();
 ```
 
 #### 使用 Redis（需要安装 MemNet.Redis 包）
-```csharp
-services.AddMemNet(configuration).WithMemNetRedis("connection-string, e.g., localhost:6379");
+
+Add vector database configuration to appsettings.json (replace the values with your actual values):
 ```
+"VectorStore": {
+    "Endpoint": "your-Redis-address, e.g., localhost:6379",
+    "ApiKey": "your-Redis-username-and-password (可选的), e.g. user:password",
+    "CollectionName": "your-collection-name (可选的), default is 'memnet_collection')"
+}
+```
+
+```csharp
+services.AddMemNet(configuration).WithMemNetRedis(configuration);
+```
+#### 更多向量存储的支持
+
+请参考MemNet.Redis项目来自定义其他向量存储的支持。欢迎提交PR增加新的支持。
