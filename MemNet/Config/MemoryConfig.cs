@@ -9,6 +9,7 @@ public class MemoryConfig
     public LLMConfig LLM { get; set; } = new();
     public EmbedderConfig Embedder { get; set; } = new();
 
+    public JinaEmbederConfig JinaEmbedder { get; set; } = new();
     /// <summary>
     /// Duplicate threshold (cosine similarity)
     /// </summary>
@@ -37,6 +38,7 @@ public class LLMConfig
     public string Model { get; set; } = "gpt-4";
     public string? ApiKey { get; set; }
     public string? Endpoint { get; set; }
+    public int MaxTokens { get; set; } = 3000;
 }
 
 public class EmbedderConfig
@@ -44,4 +46,10 @@ public class EmbedderConfig
     public string Model { get; set; } = "text-embedding-3-small";
     public string? ApiKey { get; set; }
     public string? Endpoint { get; set; }
+}
+
+public class JinaEmbederConfig
+{
+    public string Model { get; set; }
+    public string Vocab { get; set; }
 }

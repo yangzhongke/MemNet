@@ -40,7 +40,7 @@ public class OpenAIProvider : ILLMProvider
         }
     }
 
-    public async Task<List<ExtractedMemory>> ExtractMemoriesAsync(string message, CancellationToken ct = default)
+    public async Task<List<ExtractedMemory>> ExtractMemoriesAsync(string message,CancellationToken ct = default)
     {
         var systemPrompt = """
                            You are a memory extraction expert. Extract key facts, preferences, and important context from the conversation.
@@ -48,7 +48,7 @@ public class OpenAIProvider : ILLMProvider
                            {
                                "memories": [
                                    {"data": "extracted fact 1"},
-                                   {"data": "extracted fact 2"}
+                                   {"data": "extracted fact 2"},
                                ]
                            }
 
@@ -64,12 +64,42 @@ public class OpenAIProvider : ILLMProvider
                 new { role = "system", content = systemPrompt },
                 new { role = "user", content = message }
             },
-            response_format = new { type = "json_object" }
+            response_format = new { type = "json_object" },
+            max_tokens= _config.MaxTokens
         };
 
         var content = await CompleteChatAsync(ct, request);
-        var extraction =
-            JsonSerializer.Deserialize<MemoryExtractionResult>(content);
+
+        int think = content.IndexOf("</think>");
+        if (think > 0)
+        {
+            content = content.Substring(think);
+            int start = content.IndexOf("{");
+            int end = content.LastIndexOf("}") + 1;
+            if (start >= 0 && end > start)
+                content = content.Substring(start, end - start);
+        }
+        else
+        {
+            int start = content.IndexOf("{");
+            int end = content.LastIndexOf("}") + 1;
+            if (start >= 0 && end > start)
+                content = content.Substring(start,end - start);
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new List<ExtractedMemory>();
+        }
+        MemoryExtractionResult? extraction = null;
+        try
+        {
+             extraction = JsonSerializer.Deserialize<MemoryExtractionResult>(content);
+        }
+        catch (Exception ex)
+        {
+            
+        }
         return extraction?.Memories ?? new List<ExtractedMemory>();
     }
 
@@ -77,11 +107,11 @@ public class OpenAIProvider : ILLMProvider
     {
         var response = await _httpClient.PostAsJsonAsync("chat/completions", request, ct);
         await response.EnsureSuccessWithContentAsync();
-
+        
         var result =
             await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(ct);
         var content = result?.Choices?[0].Message.Content?.Trim() ?? string.Empty;
-        return content;
+       return content;
     }
 
     public async Task<string> MergeMemoriesAsync(string existing, string newMemory, CancellationToken ct = default)
@@ -146,7 +176,7 @@ public class OpenAIProvider : ILLMProvider
 
                              Only return indices of relevant memories, omit irrelevant ones.
                              """;
-
+        //"ranked_indices": [0, 2, 1, ...]
         var request = new
         {
             model = _config.Model,
@@ -154,23 +184,51 @@ public class OpenAIProvider : ILLMProvider
             {
                 new { role = "system", content = systemPrompt },
             },
-            response_format = new { type = "json_object" }
+            response_format = new { type = "json_object" },
+            max_tokens = _config.MaxTokens
         };
 
         var content = await CompleteChatAsync(ct, request);
 
+        int think = content.IndexOf("</think>");
+        if (think > 0)
+        {
+            content = content.Substring(think);
+            int start = content.IndexOf("{");
+            int end = content.LastIndexOf("}") + 1;
+            if (start >= 0 && end > start)
+                content = content.Substring(start, end - start);
+        }
+        else
+        {
+            int start = content.IndexOf("{");
+            int end = content.LastIndexOf("}") + 1;
+            if (start >= 0 && end > start)
+                content = content.Substring(start, end - start);
+        }
+
         if (string.IsNullOrWhiteSpace(content))
         {
-            return results;
+            //return results;
+            return new List<MemorySearchResult>();
         }
-
-        var ranking = JsonSerializer.Deserialize<RankingResult>(content);
-        if (ranking?.RankedIndices == null)
-        {
-            return results;
-        }
-
+        RankingResult? ranking = null;
         var reranked = new List<MemorySearchResult>();
+        try
+        {
+            ranking = JsonSerializer.Deserialize<RankingResult>(content);
+        }
+        catch (Exception ex)
+        {
+            
+        }
+
+        if ( ranking?.RankedIndices == null )
+        {
+            //return results;
+            return new List<MemorySearchResult>();
+        }
+               
         foreach (var index in ranking.RankedIndices)
         {
             if (index >= 0 && index < results.Count)
