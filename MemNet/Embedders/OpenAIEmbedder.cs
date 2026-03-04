@@ -57,7 +57,14 @@ public class OpenAIEmbedder : IEmbedder
         await response.EnsureSuccessWithContentAsync();
 
         var result = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(ct);
-        return result?.Data?[0].Embedding ?? Array.Empty<float>();
+
+        var embedding = result?.Data?.FirstOrDefault()?.Embedding;
+        if (embedding == null || embedding.Length == 0)
+        {
+            return Array.Empty<float>();
+        }
+
+        return embedding;
     }
 
     public async Task<List<float[]>> EmbedBatchAsync(List<string> texts, CancellationToken ct = default)
